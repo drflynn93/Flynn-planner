@@ -1,24 +1,16 @@
-Click **"set up a workflow yourself"** — that will open a text editor. 
-
-Delete whatever default text is in there, then paste this in:
-
 ```yaml
 name: Deploy to GitHub Pages
-
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: "pages"
   cancel-in-progress: false
-
 jobs:
   deploy:
     environment:
@@ -39,4 +31,4 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-Then click **Commit changes** (green button top right). After that the Actions tab should show it running.fcc
+Then commit and check Actions.
