@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flynn Planner">
+<meta name="theme-color" content="#1a1a2e">
+<link rel="manifest" href="manifest.json">
+<title>Flynn Planner</title>
+<style>
+  :root {
+    --teach: #4a90d9;
+    --teach-light: #e8f2fc;
+    --teach-dark: #2c5f8a;
+    --research: #7b5ea7;
+    --research-light: #f0ebf8;
+    --research-dark: #4a3567;
+    --service: #2eaa72;
+    --service-light: #e6f7f0;
+    --service-dark: #1a6644;
+    --admin: #e8864a;
+    --admin-light: #fdf0e6;
+    --admin-dark: #9a5628;
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --surface2: #f2f1ee;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.06);
+    --text: #1a1a1a;
+    --text2: #5a5a5a;
+    --text3: #9a9a9a;
+    --sidebar-bg: #1a1a2e;
+    --sidebar-text: #c8c8d8;
+    --sidebar-active: #ffffff;
+    --accent: #4a90d9;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1c1c2e;
+      --surface2: #252535;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.05);
+      --text: #e8e8f0;
+      --text2: #a0a0b8;
+      --text3: #606075;
+      --teach-light: #1a2d42;
+      --research-light: #221a32;
+      --service-light: #142a22;
+      --admin-light: #2a1e10;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; font-size: 15px; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: 220px; min-width: 220px; background: var(--sidebar-bg); color: var(--sidebar-text);
+    display: flex; flex-direction: column; padding: 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; transition: transform 0.3s;
+  }
+  #sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  #sidebar-header h1 { font-size: 16px; font-weight: 600; color: white; letter-spacing: 0.02em; }
+  #sidebar-header p { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .nav-section { padding: 12px 0; }
+  .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 16px 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 16px; cursor: pointer;
+    font-size: 14px; color: var(--sidebar-text); border-radius: 0; transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+  .nav-item.active { background: rgba(255,255,255,0.1); color: white; border-left-color: var(--accent); }
+  .nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-teach { background: var(--teach); }
+  .dot-research { background: var(--research); }
+  .dot-service { background: var(--service); }
+  .dot-admin { background: var(--admin); }
+  .dot-all { background: linear-gradient(135deg, var(--teach), var(--research)); }
+
+  .sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-footer button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; width: 100%; margin-bottom: 6px; }
+  .sidebar-footer button:hover { background: rgba(255,255,255,0.14); color: white; }
+
+  /* MAIN */
+  #main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  #topbar { background: var(--surface); border-bottom: 1px solid var(--border2); padding: 12px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; }
+  #topbar h2 { font-size: 18px; font-weight: 600; flex: 1; }
+  #topbar .today-badge { font-size: 12px; background: var(--surface2); border: 1px solid var(--border); padding: 4px 10px; border-radius: 20px; color: var(--text2); }
+  #hamburger { display: none; background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text); padding: 4px; }
+
+  #content { padding: 24px; flex: 1; }
+
+  /* PILLAR TABS */
+  .pillar-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .pillar-tab {
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1.5px solid transparent; transition: all 0.15s;
+  }
+  .pillar-tab[data-pillar="all"] { background: var(--surface2); border-color: var(--border); color: var(--text2); }
+  .pillar-tab[data-pillar="all"].active { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .pillar-tab[data-pillar="teaching"] { background: var(--teach-light); border-color: var(--teach); color: var(--teach-dark); }
+  .pillar-tab[data-pillar="teaching"].active { background: var(--teach); color: white; }
+  .pillar-tab[data-pillar="research"] { background: var(--research-light); border-color: var(--research); color: var(--research-dark); }
+  .pillar-tab[data-pillar="research"].active { background: var(--research); color: white; }
+  .pillar-tab[data-pillar="service"] { background: var(--service-light); border-color: var(--service); color: var(--service-dark); }
+  .pillar-tab[data-pillar="service"].active { background: var(--service); color: white; }
+  .pillar-tab[data-pillar="admin"] { background: var(--admin-light); border-color: var(--admin); color: var(--admin-dark); }
+  .pillar-tab[data-pillar="admin"].active { background: var(--admin); color: white; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text2); letter-spacing: 0.03em; }
+
+  /* GOAL ITEMS */
+  .goal-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+    border-radius: 8px; border: 1px solid var(--border2); margin-bottom: 8px;
+    background: var(--surface); cursor: pointer; transition: all 0.15s;
+    position: relative;
+  }
+  .goal-item:hover { border-color: var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .goal-item.done { opacity: 0.5; }
+  .goal-item.done .goal-text { text-decoration: line-through; }
+  .goal-pillar-bar { width: 3px; border-radius: 3px; align-self: stretch; flex-shrink: 0; }
+  .goal-body { flex: 1; min-width: 0; }
+  .goal-text { font-size: 14px; color: var(--text); line-height: 1.4; }
+  .goal-meta { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; align-items: center; }
+  .goal-badge { font-size: 11px; padding: 2px 7px; border-radius: 10px; font-weight: 500; }
+  .badge-teaching { background: var(--teach-light); color: var(--teach-dark); }
+  .badge-research { background: var(--research-light); color: var(--research-dark); }
+  .badge-service { background: var(--service-light); color: var(--service-dark); }
+  .badge-admin { background: var(--admin-light); color: var(--admin-dark); }
+  .goal-children { font-size: 11px; color: var(--text3); }
+  .goal-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+  .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 5px; color: var(--text3); font-size: 14px; transition: all 0.1s; }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); }
+  .check-btn { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border); background: none; cursor: pointer; flex-shrink: 0; margin-top: 1px; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .check-btn.checked { background: var(--service); border-color: var(--service); }
+  .check-btn.checked::after { content: '✓'; color: white; font-size: 11px; }
+
+  /* ADD BUTTON */
+  .add-btn {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px;
+    border: 1.5px dashed var(--border); background: none; cursor: pointer; color: var(--text3);
+    font-size: 13px; width: 100%; margin-top: 4px; transition: all 0.15s;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--teach-light); }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* YEAR VIEW */
+  .year-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 800px) { .year-pillars { grid-template-columns: 1fr; } }
+  .pillar-card { border-radius: var(--radius); padding: 16px; border: 1px solid transparent; }
+  .pillar-card.teaching { background: var(--teach-light); border-color: rgba(74,144,217,0.3); }
+  .pillar-card.research { background: var(--research-light); border-color: rgba(123,94,167,0.3); }
+  .pillar-card.service { background: var(--service-light); border-color: rgba(46,170,114,0.3); }
+  .pillar-card-title { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
+  .pillar-card.teaching .pillar-card-title { color: var(--teach-dark); }
+  .pillar-card.research .pillar-card-title { color: var(--research-dark); }
+  .pillar-card.service .pillar-card-title { color: var(--service-dark); }
+  .progress-bar { height: 4px; background: rgba(0,0,0,0.08); border-radius: 4px; margin-top: 12px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .teaching .progress-fill { background: var(--teach); }
+  .research .progress-fill { background: var(--research); }
+  .service .progress-fill { background: var(--service); }
+
+  /* WEEK VIEW */
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  @media (max-width: 700px) { .week-grid { grid-template-columns: repeat(2, 1fr); } }
+  .day-col { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px; min-height: 120px; }
+  .day-col.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .day-col.saturday { border-color: var(--admin); }
+  .day-name { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+  .day-num { font-size: 20px; font-weight: 300; color: var(--text); margin-bottom: 8px; }
+  .day-col.today .day-num { color: var(--accent); font-weight: 600; }
+  .day-col.saturday .day-name { color: var(--admin-dark); }
+  .admin-badge { font-size: 10px; background: var(--admin-light); color: var(--admin-dark); border-radius: 4px; padding: 2px 5px; margin-bottom: 6px; display: inline-block; font-weight: 600; }
+  .day-task { font-size: 12px; padding: 4px 6px; border-radius: 5px; margin-bottom: 4px; color: var(--text); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .day-task .task-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .day-task.done span { text-decoration: line-through; color: var(--text3); }
+
+  /* MODAL */
+  #modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: flex;
+    align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  #modal-overlay.open { opacity: 1; pointer-events: all; }
+  #modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  #modal-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
+  #modal-title { font-size: 16px; font-weight: 600; }
+  #modal-body { padding: 16px 20px; }
+  #modal-footer { padding: 12px 20px; border-top: 1px solid var(--border2); display: flex; gap: 8px; justify-content: flex-end; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; display: block; letter-spacing: 0.03em; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text); font-size: 14px; font-family: inherit;
+  }
+  .form-textarea { resize: vertical; min-height: 70px; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,144,217,0.12); }
+  .btn-primary { background: var(--accent); color: white; border: none; padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-cancel { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); padding: 9px 18px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .btn-danger { background: #fee2e2; color: #b91c1c; border: none; padding: 9px 18px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 16px; font-weight: 600; }
+  .section-sub { font-size: 13px; color: var(--text3); margin-left: 8px; }
+
+  /* MONTH VIEW */
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .month-cell { min-height: 70px; background: var(--surface); border: 1px solid var(--border2); padding: 6px; }
+  .month-cell.other-month { background: var(--surface2); opacity: 0.6; }
+  .month-cell.today { border-color: var(--accent); }
+  .month-cell.saturday { background: color-mix(in srgb, var(--admin-light) 40%, var(--surface)); }
+  .month-day-num { font-size: 12px; color: var(--text2); margin-bottom: 3px; font-weight: 500; }
+  .month-cell.today .month-day-num { color: var(--accent); font-weight: 700; }
+  .month-task-dot { height: 5px; border-radius: 3px; margin-bottom: 2px; font-size: 10px; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* SEMESTER PROGRESS */
+  .semester-block { margin-bottom: 16px; }
+  .sem-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .sem-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+  .sem-current { background: var(--teach-light); color: var(--teach-dark); }
+  .sem-upcoming { background: var(--surface2); color: var(--text3); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 32px; color: var(--text3); }
+  .empty-state p { margin-top: 8px; font-size: 14px; }
+
+  /* NAV WEEK CONTROLS */
+  .week-controls { display: flex; align-items: center; gap: 8px; }
+  .week-controls button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .week-controls .week-label { font-size: 14px; font-weight: 500; min-width: 180px; text-align: center; }
+
+  /* DRAG INDICATOR */
+  .goal-item.drag-over { border-color: var(--accent); background: var(--teach-light); }
+
+  /* MOBILE */
+  @media (max-width: 640px) {
+    #sidebar { transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); }
+    #main { margin-left: 0; }
+    #hamburger { display: flex; }
+    #content { padding: 14px; }
+    .year-pillars { grid-template-columns: 1fr; }
+  }
+  #mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+  #mobile-overlay.show { display: block; }
+
+  /* CHILD GOALS INDENT */
+  .child-goals { margin-left: 24px; margin-top: 4px; border-left: 2px solid var(--border); padding-left: 10px; }
+
+  /* INLINE BUDGET SECTION */
+  .budget-section { background: var(--admin-light); border: 1px solid rgba(232,134,74,0.3); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; }
+  .budget-section h3 { font-size: 13px; font-weight: 700; color: var(--admin-dark); margin-bottom: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .budget-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(232,134,74,0.15); font-size: 13px; }
+  .budget-item:last-child { border-bottom: none; }
+  .budget-check { width: 18px; height: 18px; accent-color: var(--admin); }
+
+  /* WEEK NAV */
+  .topbar-controls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div id="mobile-overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div id="sidebar-header">
+    <h1>Flynn Planner</h1>
+    <p id="sidebar-date"></p>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Time Scale</div>
+    <div class="nav-item active" onclick="showView('year')" id="nav-year">
+      <span style="font-size:16px">◎</span> Year View
+    </div>
+    <div class="nav-item" onclick="showView('semester')" id="nav-semester">
+      <span style="font-size:16px">◑</span> Semester
+    </div>
+    <div class="nav-item" onclick="showView('month')" id="nav-month">
+      <span style="font-size:16px">▦</span> Month
+    </div>
+    <div class="nav-item" onclick="showView('week')" id="nav-week">
+      <span style="font-size:16px">▤</span> Week
+    </div>
+    <div class="nav-item" onclick="showView('day')" id="nav-day">
+      <span style="font-size:16px">▢</span> Today
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Pillars</div>
+    <div class="nav-item" onclick="filterPillar('teaching')" id="nav-teaching">
+      <span class="nav-dot dot-teach"></span> Teaching
+    </div>
+    <div class="nav-item" onclick="filterPillar('research')" id="nav-research">
+      <span class="nav-dot dot-research"></span> Research
+    </div>
+    <div class="nav-item" onclick="filterPillar('service')" id="nav-service">
+      <span class="nav-dot dot-service"></span> Service
+    </div>
+    <div class="nav-item" onclick="filterPillar('admin')" id="nav-admin">
+      <span class="nav-dot dot-admin"></span> Admin / Finance
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button onclick="exportData()">⬇ Export Backup</button>
+    <button onclick="triggerImport()">⬆ Import Backup</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="main">
+  <header id="topbar">
+    <button id="hamburger" onclick="toggleSidebar()">☰</button>
+    <h2 id="view-title">Year View</h2>
+    <div class="topbar-controls" id="topbar-controls"></div>
+    <div class="today-badge" id="topbar-date"></div>
+  </header>
+  <div id="content"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div id="modal">
+    <div id="modal-header">
+      <span id="modal-title">Add Goal</span>
+      <button class="icon-btn" onclick="closeModal()" style="font-size:18px">✕</button>
+    </div>
+    <div id="modal-body"></div>
+    <div id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+// ============ DATA STORE ============
+const STORE_KEY = 'flynnplanner_v2';
+let data = {
+  goals: [],
+  tasks: [],
+  budgetItems: [
+    { id: 'b1', text: 'Pay bills / check accounts', recurring: true },
+    { id: 'b2', text: 'Review subscriptions', recurring: true },
+    { id: 'b3', text: 'Log expenses', recurring: true },
+    { id: 'b4', text: 'Transfer to savings', recurring: true },
+  ],
+  budgetLog: {}
+};
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORE_KEY);
+    if (saved) data = JSON.parse(saved);
+  } catch(e) { console.error('Load error', e); }
+}
+
+function saveData() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `flynnplanner_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function triggerImport() { document.getElementById('import-file').click(); }
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      data = JSON.parse(ev.target.result);
+      saveData();
+      render();
+      alert('Imported successfully.');
+    } catch(e) { alert('Invalid backup file.'); }
+  };
+  r.readAsText(file);
+}
+
+// ============ STATE ============
+let currentView = 'year';
+let currentPillarFilter = 'all';
+let weekOffset = 0;
+let currentModal = null;
+let dragGoalId = null;
+const PILLARS = ['teaching','research','service','admin'];
+const PILLAR_COLORS = { teaching: 'var(--teach)', research: 'var(--research)', service: 'var(--service)', admin: 'var(--admin)' };
+const today = new Date();
+const todayStr = fmtDate(today);
+
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getCurrentYear() { return today.getFullYear(); }
+function getSemester(d) {
+  const m = d.getMonth();
+  if (m >= 0 && m <= 4) return 'Spring';
+  if (m >= 5 && m <= 7) return 'Summer';
+  return 'Fall';
+}
+
+// ============ ROUTING ============
+function showView(v, closeSide = true) {
+  currentView = v;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+v);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('view-title').textContent = {year:'Year View',semester:'Semester',month:'Month',week:'Week',day:'Today'}[v];
+  if (closeSide && window.innerWidth <= 640) closeSidebar();
+  render();
+}
+
+function filterPillar(p) {
+  currentPillarFilter = p;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('nav-'+p);
+  if (el) el.classList.add('active');
+  document.getElementById('view-title').textContent = p.charAt(0).toUpperCase()+p.slice(1);
+  currentView = 'year';
+  if (window.innerWidth <= 640) closeSidebar();
+  render();
+}
+
+// ============ RENDER DISPATCH ============
+function render() {
+  updateTopbarDate();
+  const views = { year: renderYear, semester: renderSemester, month: renderMonth, week: renderWeek, day: renderDay };
+  (views[currentView] || renderYear)();
+}
+
+function updateTopbarDate() {
+  const opts = { weekday:'short', month:'short', day:'numeric' };
+  document.getElementById('topbar-date').textContent = today.toLocaleDateString('en-US', opts);
+  document.getElementById('sidebar-date').textContent = today.toLocaleDateString('en-US', opts);
+}
+
+// ============ YEAR VIEW ============
+function renderYear() {
+  document.getElementById('topbar-controls').innerHTML = `
+    <button class="btn-primary" onclick="openAddGoal('year',null)" style="font-size:13px;padding:6px 14px;">+ Goal</button>`;
+  const filter = currentPillarFilter;
+  const pillarsToShow = filter === 'all' ? ['teaching','research','service'] : [filter];
+
+  let html = `<div style="margin-bottom:20px">
+    <div style="font-size:22px;font-weight:300;color:var(--text2);margin-bottom:4px">${getCurrentYear()}</div>
+    <div style="font-size:13px;color:var(--text3)">Annual goals — drag to decompose into semester milestones</div>
+  </div>`;
+
+  // Admin always shown separately
+  if (filter === 'all' || filter === 'admin') {
+    html += renderAdminSummary();
+  }
+
+  html += `<div class="year-pillars">`;
+  for (const p of pillarsToShow) {
+    if (p === 'admin') continue;
+    const goals = getGoalsByLevel('year', p);
+    const done = goals.filter(g => g.done).length;
+    const pct = goals.length ? Math.round(done/goals.length*100) : 0;
+    html += `<div class="pillar-card ${p}" ondragover="handleDragOver(event,'year','${p}')" ondrop="handleDrop(event,'year','${p}')">
+      <div class="pillar-card-title">${p}</div>
+      ${goals.map(g => goalItemHTML(g, false)).join('')}
+      <button class="add-btn" style="margin-top:8px" onclick="openAddGoal('year','${p}')">+ Add ${p} goal</button>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">${done}/${goals.length} complete</div>
+    </div>`;
+  }
+  html += `</div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderAdminSummary() {
+  const goals = getGoalsByLevel('year', 'admin');
+  const done = goals.filter(g => g.done).length;
+  return `<div class="budget-section" style="margin-bottom:16px">
+    <h3>⚡ Admin & Finance</h3>
+    <div style="font-size:12px;color:var(--admin-dark);margin-bottom:8px">Saturday anchor day — budget, bills, admin tasks</div>
+    ${goals.map(g => goalItemHTML(g, false)).join('')}
+    <button class="add-btn" onclick="openAddGoal('year','admin')" style="border-color:var(--admin);color:var(--admin-dark)">+ Add admin goal</button>
+    ${done > 0 || goals.length > 0 ? `<div style="font-size:11px;color:var(--admin-dark);margin-top:6px">${done}/${goals.length} complete</div>` : ''}
+  </div>`;
+}
+
+function getGoalsByLevel(level, pillar, parentId = null) {
+  return data.goals.filter(g => g.level === level && g.pillar === pillar && g.parentId === parentId);
+}
+
+function goalItemHTML(g, showChildren = true) {
+  const color = PILLAR_COLORS[g.pillar] || 'var(--text3)';
+  const children = data.goals.filter(c => c.parentId === g.id);
+  return `<div class="goal-item${g.done?' done':''}" id="goal-${g.id}" draggable="true"
+    ondragstart="handleDragStart(event,'${g.id}')"
+    ondragover="handleDragOver(event,'${g.level}','${g.pillar}')"
+    ondrop="handleDrop(event,'${g.level}','${g.pillar}')">
+    <div class="goal-pillar-bar" style="background:${color}"></div>
+    <button class="check-btn${g.done?' checked':''}" onclick="toggleGoal('${g.id}',event)"></button>
+    <div class="goal-body">
+      <div class="goal-text">${escHtml(g.text)}</div>
+      <div class="goal-meta">
+        <span class="goal-badge badge-${g.pillar}">${g.pillar}</span>
+        ${g.dueDate ? `<span style="font-size:11px;color:var(--text3)">${g.dueDate}</span>` : ''}
+        ${children.length ? `<span class="goal-children">${children.filter(c=>c.done).length}/${children.length} tasks</span>` : ''}
+      </div>
+      ${showChildren && children.length ? `<div class="child-goals">${children.map(c=>goalItemHTML(c,false)).join('')}</div>` : ''}
+    </div>
+    <div class="goal-actions">
+      <button class="icon-btn" onclick="openDecompose('${g.id}')" title="Break down">⬇</button>
+      <button class="icon-btn" onclick="openEditGoal('${g.id}')" title="Edit">✎</button>
+      <button class="icon-btn" onclick="deleteGoal('${g.id}')" title="Delete">✕</button>
+    </div>
+  </div>`;
+}
+
+// ============ SEMESTER VIEW ============
+function renderSemester() {
+  document.getElementById('topbar-controls').innerHTML = `
+    <button class="btn-primary" onclick="openAddGoal('semester',null)" style="font-size:13px;padding:6px 14px;">+ Milestone</button>`;
+  const yr = getCurrentYear();
+  const semesters = [
+    {key:`${yr}-spring`, label:`Spring ${yr}`, months:'Jan–May'},
+    {key:`${yr}-summer`, label:`Summer ${yr}`, months:'Jun–Jul'},
+    {key:`${yr}-fall`, label:`Fall ${yr}`, months:'Aug–Dec'},
+    {key:`${yr+1}-spring`, label:`Spring ${yr+1}`, months:'Jan–May'},
+  ];
+  const current = getSemester(today).toLowerCase() + '-' + yr;
+  const pillars = currentPillarFilter === 'all' ? PILLARS : [currentPillarFilter];
+
+  let html = '<div style="display:flex;flex-direction:column;gap:24px">';
+  for (const sem of semesters) {
+    const isCurrent = sem.key === `${yr}-${getSemester(today).toLowerCase()}`;
+    html += `<div class="card">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="card-title">${sem.label}</span>
+          <span style="font-size:11px;color:var(--text3)">${sem.months}</span>
+          ${isCurrent ? '<span class="sem-badge sem-current">current</span>' : ''}
+        </div>
+        <button class="add-btn" style="width:auto;padding:4px 10px;font-size:12px" onclick="openAddGoal('semester',null,'${sem.key}')">+ Add</button>
+      </div>`;
+    for (const p of pillars) {
+      const goals = data.goals.filter(g => g.level === 'semester' && g.pillar === p && g.semester === sem.key);
+      if (!goals.length && currentPillarFilter !== 'all') {
+        html += `<div class="empty-state" style="padding:12px"><p>No ${p} milestones yet for ${sem.label}</p></div>`;
+        continue;
+      }
+      if (!goals.length) continue;
+      html += `<div style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${PILLAR_COLORS[p]};margin-bottom:6px">${p}</div>
+        ${goals.map(g=>goalItemHTML(g,true)).join('')}
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  html += '</div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+// ============ MONTH VIEW ============
+function renderMonth() {
+  const now = today;
+  const yr = now.getFullYear();
+  const mo = now.getMonth();
+  const firstDay = new Date(yr, mo, 1).getDay();
+  const daysInMonth = new Date(yr, mo+1, 0).getDate();
+  const monthName = now.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+  document.getElementById('topbar-controls').innerHTML = `<span style="font-size:14px;color:var(--text2)">${monthName}</span>`;
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = `<div class="card">
+    <div class="month-grid">
+      ${dayNames.map(d=>`<div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text3);padding:6px 6px 8px;text-align:center">${d}</div>`).join('')}`;
+
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="month-cell other-month"></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr === todayStr;
+    const isSat = new Date(yr,mo,d).getDay() === 6;
+    const dayTasks = data.tasks.filter(t => t.date === dateStr);
+    const dayGoals = data.goals.filter(g => g.dueDate === dateStr);
+    html += `<div class="month-cell${isToday?' today':''}${isSat?' saturday':''}" onclick="openDayView('${dateStr}')">
+      <div class="month-day-num">${d}</div>
+      ${isSat ? '<div class="month-task-dot" style="background:var(--admin-light);color:var(--admin-dark)">Admin</div>' : ''}
+      ${dayGoals.slice(0,2).map(g=>`<div class="month-task-dot" style="background:${PILLAR_COLORS[g.pillar]}22;color:${PILLAR_COLORS[g.pillar]}">${escHtml(g.text.slice(0,18))}</div>`).join('')}
+      ${dayTasks.slice(0,2).map(t=>`<div class="month-task-dot" style="background:${PILLAR_COLORS[t.pillar]||'#eee'}22;color:${PILLAR_COLORS[t.pillar]||'#888'}">${escHtml(t.text.slice(0,18))}</div>`).join('')}
+    </div>`;
+  }
+  html += `</div></div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+function openDayView(dateStr) {
+  currentView = 'day';
+  renderDayForDate(dateStr);
+}
+
+// ============ WEEK VIEW ============
+function getWeekStart(offset = 0) {
+  const d = new Date(today);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day + offset * 7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function renderWeek() {
+  const ws = getWeekStart(weekOffset);
+  const we = new Date(ws); we.setDate(we.getDate()+6);
+  const wLabel = `${ws.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${we.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+
+  document.getElementById('topbar-controls').innerHTML = `
+    <div class="week-controls">
+      <button onclick="weekOffset--;renderWeek()">‹</button>
+      <span class="week-label">${wLabel}</span>
+      <button onclick="weekOffset++;renderWeek()">›</button>
+      <button onclick="weekOffset=0;renderWeek()" style="font-size:11px">Today</button>
+    </div>
+    <button class="btn-primary" onclick="openAddTask(null)" style="font-size:13px;padding:6px 14px;margin-left:4px">+ Task</button>`;
+
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = `<div class="week-grid">`;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws); d.setDate(ws.getDate()+i);
+    const dStr = fmtDate(d);
+    const isToday = dStr === todayStr;
+    const isSat = i === 6;
+    const tasks = data.tasks.filter(t => t.date === dStr);
+    const dueGoals = data.goals.filter(g => g.dueDate === dStr);
+
+    html += `<div class="day-col${isToday?' today':''}${isSat?' saturday':''}" ondragover="handleTaskDragOver(event,'${dStr}')" ondrop="handleTaskDrop(event,'${dStr}')">
+      <div class="day-name">${days[i]}</div>
+      <div class="day-num">${d.getDate()}</div>
+      ${isSat ? '<div class="admin-badge">Admin Day</div>' : ''}
+      ${isSat ? renderBudgetChecklist(dStr) : ''}
+      ${dueGoals.map(g=>`<div class="day-task" onclick="openEditGoal('${g.id}')">
+        <span class="task-dot" style="background:${PILLAR_COLORS[g.pillar]}"></span>
+        <span style="font-size:11px;font-style:italic">${escHtml(g.text.slice(0,25))}</span>
+      </div>`).join('')}
+      ${tasks.map(t=>`<div class="day-task${t.done?' done':''}" draggable="true" ondragstart="handleTaskDragStart(event,'${t.id}')">
+        <button class="check-btn${t.done?' checked':''}" onclick="toggleTask('${t.id}',event)" style="width:16px;height:16px;flex-shrink:0"></button>
+        <span class="task-dot" style="background:${PILLAR_COLORS[t.pillar]||'var(--text3)'}"></span>
+        <span style="font-size:12px">${escHtml(t.text.slice(0,30))}</span>
+      </div>`).join('')}
+      <button class="add-btn" style="font-size:11px;padding:4px 6px;margin-top:4px" onclick="openAddTask('${dStr}')">+ Task</button>
+    </div>`;
+  }
+  html += `</div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+function renderBudgetChecklist(dateStr) {
+  const log = data.budgetLog[dateStr] || {};
+  return data.budgetItems.map(item => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px">
+      <input type="checkbox" class="budget-check" ${log[item.id]?'checked':''} onchange="toggleBudget('${item.id}','${dateStr}',this)">
+      <span style="color:var(--admin-dark)">${escHtml(item.text)}</span>
+    </div>`).join('');
+}
+
+function toggleBudget(itemId, dateStr, cb) {
+  if (!data.budgetLog[dateStr]) data.budgetLog[dateStr] = {};
+  data.budgetLog[dateStr][itemId] = cb.checked;
+  saveData();
+}
+
+// ============ DAY VIEW ============
+function renderDay() { renderDayForDate(todayStr); }
+
+function renderDayForDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const dayLabel = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+  const isSat = d.getDay() === 6;
+  document.getElementById('topbar-controls').innerHTML = `
+    <button class="btn-primary" onclick="openAddTask('${dateStr}')" style="font-size:13px;padding:6px 14px;">+ Task</button>`;
+
+  const tasks = data.tasks.filter(t => t.date === dateStr);
+  const dueGoals = data.goals.filter(g => g.dueDate === dateStr);
+  const pillars = currentPillarFilter === 'all' ? PILLARS : [currentPillarFilter];
+
+  let html = `<div style="font-size:20px;font-weight:300;color:var(--text2);margin-bottom:20px">${dayLabel}</div>`;
+
+  if (isSat) {
+    const log = data.budgetLog[dateStr] || {};
+    const done = data.budgetItems.filter(i => log[i.id]).length;
+    html += `<div class="budget-section">
+      <h3>Admin & Finance Checklist ${done===data.budgetItems.length?'✓':''}</h3>
+      ${data.budgetItems.map(item=>`
+        <div class="budget-item">
+          <input type="checkbox" class="budget-check" ${log[item.id]?'checked':''} onchange="toggleBudget('${item.id}','${dateStr}',this)">
+          <span style="color:var(--admin-dark)">${escHtml(item.text)}</span>
+        </div>`).join('')}
+      <button class="add-btn" style="margin-top:8px;font-size:12px" onclick="openAddBudgetItem()">+ Add checklist item</button>
+    </div>`;
+  }
+
+  if (dueGoals.length) {
+    html += `<div class="card" style="margin-bottom:16px">
+      <div class="card-header"><span class="card-title">Goals Due Today</span></div>
+      ${dueGoals.map(g=>goalItemHTML(g,false)).join('')}
+    </div>`;
+  }
+
+  html += `<div class="card">
+    <div class="section-header">
+      <span class="section-title">Tasks</span>
+    </div>
+    <div class="pillar-tabs">
+      ${['all',...PILLARS].map(p=>`<span class="pillar-tab${currentPillarFilter===p?' active':''}" data-pillar="${p}" onclick="currentPillarFilter='${p}';renderDayForDate('${dateStr}')">${p==='all'?'All':p.charAt(0).toUpperCase()+p.slice(1)}</span>`).join('')}
+    </div>`;
+
+  const filtered = tasks.filter(t => currentPillarFilter === 'all' || t.pillar === currentPillarFilter);
+  if (!filtered.length) {
+    html += `<div class="empty-state"><p>No tasks yet. Add one above.</p></div>`;
+  } else {
+    html += filtered.map(t => `<div class="goal-item${t.done?' done':''}">
+      <div class="goal-pillar-bar" style="background:${PILLAR_COLORS[t.pillar]||'var(--text3)'}"></div>
+      <button class="check-btn${t.done?' checked':''}" onclick="toggleTask('${t.id}',event)"></button>
+      <div class="goal-body">
+        <div class="goal-text">${escHtml(t.text)}</div>
+        ${t.notes ? `<div style="font-size:12px;color:var(--text3);margin-top:2px">${escHtml(t.notes)}</div>` : ''}
+        <div class="goal-meta"><span class="goal-badge badge-${t.pillar}">${t.pillar}</span></div>
+      </div>
+      <div class="goal-actions">
+        <button class="icon-btn" onclick="deleteTask('${t.id}')">✕</button>
+      </div>
+    </div>`).join('');
+  }
+  html += `<button class="add-btn" onclick="openAddTask('${dateStr}')">+ Add task</button></div>`;
+
+  document.getElementById('content').innerHTML = html;
+  document.getElementById('view-title').textContent = isSat ? 'Today (Admin Day)' : 'Today';
+}
+
+// ============ DRAG & DROP (Goals) ============
+function handleDragStart(e, goalId) {
+  dragGoalId = goalId;
+  e.dataTransfer.effectAllowed = 'move';
+}
+function handleDragOver(e, level, pillar) {
+  e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+}
+function handleDrop(e, level, pillar) {
+  e.preventDefault();
+  if (!dragGoalId) return;
+  // Show decompose modal pre-filled for this context
+  const goal = data.goals.find(g => g.id === dragGoalId);
+  if (!goal) return;
+  openDecompose(dragGoalId, level, pillar);
+  dragGoalId = null;
+}
+
+let dragTaskId = null;
+function handleTaskDragStart(e, taskId) {
+  dragTaskId = taskId;
+  e.dataTransfer.effectAllowed = 'move';
+}
+function handleTaskDragOver(e, dateStr) { e.preventDefault(); }
+function handleTaskDrop(e, dateStr) {
+  e.preventDefault();
+  if (!dragTaskId) return;
+  const task = data.tasks.find(t => t.id === dragTaskId);
+  if (task) { task.date = dateStr; saveData(); renderWeek(); }
+  dragTaskId = null;
+}
+
+// ============ MODALS ============
+function openModal(title, bodyHTML, footerHTML) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHTML;
+  document.getElementById('modal-footer').innerHTML = footerHTML;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  currentModal = null;
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function openAddGoal(level, pillar, semester = null) {
+  const pillarOpts = PILLARS.map(p=>`<option value="${p}"${pillar===p?' selected':''}>${p.charAt(0).toUpperCase()+p.slice(1)}</option>`).join('');
+  const semOpts = ['spring','summer','fall'].map(s=>`<option value="${getCurrentYear()}-${s}"${semester===`${getCurrentYear()}-${s}`?' selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)} ${getCurrentYear()}</option>`);
+  semOpts.push(`<option value="${getCurrentYear()+1}-spring">Spring ${getCurrentYear()+1}</option>`);
+
+  openModal(`Add ${level.charAt(0).toUpperCase()+level.slice(1)} Goal`, `
+    <div class="form-group"><label class="form-label">Goal Text</label><input class="form-input" id="f-text" placeholder="e.g. Submit AJG special issue paper" autofocus></div>
+    <div class="form-group"><label class="form-label">Pillar</label><select class="form-select" id="f-pillar">${pillarOpts}</select></div>
+    ${level==='semester'?`<div class="form-group"><label class="form-label">Semester</label><select class="form-select" id="f-semester">${semOpts.join('')}</select></div>`:''}
+    <div class="form-group"><label class="form-label">Due Date (optional)</label><input type="date" class="form-input" id="f-due"></div>
+    <div class="form-group"><label class="form-label">Notes (optional)</label><textarea class="form-textarea" id="f-notes" placeholder="Context, links, details..."></textarea></div>
+  `, `<button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveGoal('${level}',null,'${semester||''}')">Save Goal</button>`);
+}
+
+function saveGoal(level, parentId, semester = '') {
+  const text = document.getElementById('f-text').value.trim();
+  if (!text) { alert('Please enter goal text.'); return; }
+  const goal = {
+    id: uid(), text, level,
+    pillar: document.getElementById('f-pillar').value,
+    dueDate: (document.getElementById('f-due')||{}).value || null,
+    notes: (document.getElementById('f-notes')||{}).value || '',
+    semester: document.getElementById('f-semester') ? document.getElementById('f-semester').value : semester || '',
+    parentId: parentId || null,
+    done: false,
+    createdAt: new Date().toISOString()
+  };
+  data.goals.push(goal);
+  saveData(); closeModal(); render();
+}
+
+function openEditGoal(id) {
+  const g = data.goals.find(x => x.id === id);
+  if (!g) return;
+  const pillarOpts = PILLARS.map(p=>`<option value="${p}"${g.pillar===p?' selected':''}>${p.charAt(0).toUpperCase()+p.slice(1)}</option>`).join('');
+  openModal('Edit Goal', `
+    <div class="form-group"><label class="form-label">Goal Text</label><input class="form-input" id="f-text" value="${escAttr(g.text)}"></div>
+    <div class="form-group"><label class="form-label">Pillar</label><select class="form-select" id="f-pillar">${pillarOpts}</select></div>
+    <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-input" id="f-due" value="${g.dueDate||''}"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-notes">${escHtml(g.notes||'')}</textarea></div>
+  `, `<button class="btn-danger" onclick="deleteGoal('${id}')">Delete</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="updateGoal('${id}')">Save</button>`);
+}
+
+function updateGoal(id) {
+  const g = data.goals.find(x => x.id === id);
+  if (!g) return;
+  g.text = document.getElementById('f-text').value.trim();
+  g.pillar = document.getElementById('f-pillar').value;
+  g.dueDate = document.getElementById('f-due').value || null;
+  g.notes = document.getElementById('f-notes').value;
+  saveData(); closeModal(); render();
+}
+
+function openDecompose(goalId, targetLevel, targetPillar) {
+  const g = data.goals.find(x => x.id === goalId);
+  if (!g) return;
+  const levels = ['year','semester','month','week','day'];
+  const nextLevels = levels.slice(levels.indexOf(g.level)+1);
+  if (!nextLevels.length && !targetLevel) { alert('Already at day level.'); return; }
+  const tl = targetLevel || nextLevels[0];
+  const pillarOpts = PILLARS.map(p=>`<option value="${p}"${(targetPillar||g.pillar)===p?' selected':''}>${p.charAt(0).toUpperCase()+p.slice(1)}</option>`).join('');
+  const levelOpts = nextLevels.map(l=>`<option value="${l}"${l===tl?' selected':''}>${l.charAt(0).toUpperCase()+l.slice(1)}</option>`).join('');
+  openModal('Break Down Goal', `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;padding:8px 10px;background:var(--surface2);border-radius:6px">
+      Breaking down: <strong>${escHtml(g.text)}</strong>
+    </div>
+    <div class="form-group"><label class="form-label">Sub-task / Milestone Text</label><input class="form-input" id="f-text" placeholder="Specific action or milestone..." autofocus></div>
+    <div class="form-group"><label class="form-label">Level</label><select class="form-select" id="f-level">${levelOpts}</select></div>
+    <div class="form-group"><label class="form-label">Pillar</label><select class="form-select" id="f-pillar">${pillarOpts}</select></div>
+    <div class="form-group"><label class="form-label">Due Date (optional)</label><input type="date" class="form-input" id="f-due"></div>
+  `, `<button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveDecomposed('${goalId}')">Add Sub-task</button>`);
+}
+
+function saveDecomposed(parentId) {
+  const text = document.getElementById('f-text').value.trim();
+  if (!text) { alert('Please enter text.'); return; }
+  const goal = {
+    id: uid(), text,
+    level: document.getElementById('f-level').value,
+    pillar: document.getElementById('f-pillar').value,
+    dueDate: document.getElementById('f-due').value || null,
+    notes: '', semester: '', parentId, done: false,
+    createdAt: new Date().toISOString()
+  };
+  data.goals.push(goal);
+  saveData(); closeModal(); render();
+}
+
+function openAddTask(dateStr) {
+  const pillarOpts = PILLARS.map(p=>`<option value="${p}">${p.charAt(0).toUpperCase()+p.slice(1)}</option>`).join('');
+  openModal('Add Task', `
+    <div class="form-group"><label class="form-label">Task</label><input class="form-input" id="f-text" placeholder="e.g. Grade quiz 3, Reply to journal editor..." autofocus></div>
+    <div class="form-group"><label class="form-label">Pillar</label><select class="form-select" id="f-pillar">${pillarOpts}</select></div>
+    <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="f-due" value="${dateStr||todayStr}"></div>
+    <div class="form-group"><label class="form-label">Notes (optional)</label><textarea class="form-textarea" id="f-notes" style="min-height:50px"></textarea></div>
+  `, `<button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveTask()">Add Task</button>`);
+}
+
+function saveTask() {
+  const text = document.getElementById('f-text').value.trim();
+  if (!text) { alert('Please enter a task.'); return; }
+  const task = {
+    id: uid(), text,
+    pillar: document.getElementById('f-pillar').value,
+    date: document.getElementById('f-due').value || todayStr,
+    notes: document.getElementById('f-notes').value || '',
+    done: false, createdAt: new Date().toISOString()
+  };
+  data.tasks.push(task);
+  saveData(); closeModal(); render();
+}
+
+function openAddBudgetItem() {
+  openModal('Add Admin Checklist Item', `
+    <div class="form-group"><label class="form-label">Item</label><input class="form-input" id="f-text" placeholder="e.g. Review credit card statement" autofocus></div>
+  `, `<button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveBudgetItem()">Add Item</button>`);
+}
+
+function saveBudgetItem() {
+  const text = document.getElementById('f-text').value.trim();
+  if (!text) return;
+  data.budgetItems.push({ id: uid(), text, recurring: true });
+  saveData(); closeModal(); render();
+}
+
+// ============ TOGGLES & DELETES ============
+function toggleGoal(id, e) {
+  e.stopPropagation();
+  const g = data.goals.find(x => x.id === id);
+  if (g) { g.done = !g.done; saveData(); render(); }
+}
+function deleteGoal(id) {
+  if (!confirm('Delete this goal and all its sub-goals?')) return;
+  const toDelete = new Set([id]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    data.goals.forEach(g => { if (g.parentId && toDelete.has(g.parentId) && !toDelete.has(g.id)) { toDelete.add(g.id); changed = true; }});
+  }
+  data.goals = data.goals.filter(g => !toDelete.has(g.id));
+  saveData(); closeModal(); render();
+}
+function toggleTask(id, e) {
+  e.stopPropagation();
+  const t = data.tasks.find(x => x.id === id);
+  if (t) { t.done = !t.done; saveData(); render(); }
+}
+function deleteTask(id) {
+  data.tasks = data.tasks.filter(t => t.id !== id);
+  saveData(); render();
+}
+
+// ============ UTILS ============
+function uid() { return Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s||'').replace(/"/g,'&quot;'); }
+
+// ============ MOBILE ============
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobile-overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobile-overlay').classList.remove('show');
+}
+
+// ============ INIT ============
+loadData();
+
+// Seed with initial goals if empty
+if (!data.goals.length) {
+  const yr = getCurrentYear();
+  const sem = getSemester(today).toLowerCase();
+  data.goals = [
+    { id: uid(), text: 'Secure promotion to Associate Professor', level: 'year', pillar: 'teaching', semester: '', parentId: null, done: false, dueDate: null, notes: 'Primary professional goal this year', createdAt: new Date().toISOString() },
+    { id: uid(), text: 'Publish Career Readiness paper (Flynn, Siemens, Raymond)', level: 'year', pillar: 'research', semester: '', parentId: null, done: false, dueDate: null, notes: 'Under revision at JME', createdAt: new Date().toISOString() },
+    { id: uid(), text: 'Present NFL playoff format research at conference', level: 'year', pillar: 'research', semester: '', parentId: null, done: false, dueDate: null, notes: 'MIT Sloan connection', createdAt: new Date().toISOString() },
+    { id: uid(), text: 'Complete AMA committee obligations', level: 'year', pillar: 'service', semester: '', parentId: null, done: false, dueDate: null, notes: '', createdAt: new Date().toISOString() },
+    { id: uid(), text: 'Submit R&R revision for Career Readiness paper', level: 'semester', pillar: 'research', semester: `${yr}-${sem}`, parentId: null, done: false, dueDate: null, notes: 'Fix chi-square methodology, t-test midpoints', createdAt: new Date().toISOString() },
+  ];
+  saveData();
+}
+
+showView('year');
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
